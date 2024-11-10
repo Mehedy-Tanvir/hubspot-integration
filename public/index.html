@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HubSpot Form Integration</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+      }
+      input,
+      button {
+        margin-bottom: 10px;
+        padding: 5px;
+      }
+      #message {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>HubSpot Form Integration</h1>
+    <div id="auth">
+      <p>Please authenticate with HubSpot to use this form.</p>
+      <a href="/auth"><button>Authenticate with HubSpot</button></a>
+    </div>
+    <div id="form" style="display: none">
+      <h2>Submit Contact Form</h2>
+      <form id="contactForm">
+        <input type="text" name="firstname" placeholder="First Name" required />
+        <input type="text" name="lastname" placeholder="Last Name" required />
+        <input type="email" name="email" placeholder="Email" required />
+        <input type="text" name="company" placeholder="Company" />
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+    <div id="message"></div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const authDiv = document.getElementById("auth");
+        const formDiv = document.getElementById("form");
+        const messageDiv = document.getElementById("message");
+        const contactForm = document.getElementById("contactForm");
+
+        // Check if user is authenticated
+        fetch("/submit-form", { method: "POST" }).then((response) => {
+          if (response.status === 401) {
+            authDiv.style.display = "block";
+            formDiv.style.display = "none";
+          } else {
+            authDiv.style.display = "none";
+            formDiv.style.display = "block";
+          }
+        });
+
+        contactForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(contactForm);
+          const formDataObj = Object.fromEntries(formData.entries());
+
+          try {
+            const response = await fetch("/submit-form", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(formDataObj),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              messageDiv.textContent = "Form submitted successfully!";
+              contactForm.reset();
+            } else {
+              messageDiv.textContent =
+                "Failed to submit form. Please try again.";
+            }
+          } catch (error) {
+            messageDiv.textContent = "An error occurred. Please try again.";
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
